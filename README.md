@@ -44,8 +44,22 @@ motor.h
 함수 : void motor_Init(int PinA, int PinB)
 역할 : 모터와 연결된 GPIO와 모터의 기본 값 설정
 사용 위치 : main
-void motor_rev()
-void motor_runr()
+반환 값 : void
+전달 인자 : MOTOR PIN의 GPIO 번호
+내부 구조 : GPIOA의 MODER와 OTYPER, ODR의 기본 값을 설정
+(츌력, Push_pull, LOGIC 0)
+
+함수 : void motor_rev()
+역할 : 모터의 회전 방향을 바꾸기 위한 함수
+사용 위치 : main
+반환 값 : void
+전달 인자 : void
+내부 구조 : current변수를 선언하고 현재 GPIOA의 ODR값 저장
+Motor의 GPIO LOGIC 값을 11 or 00으로 바꾸어 정지, 약 500ms이후 current변수에 저장된 LOGIC값을 반전(~)시킨 후 ODR에 or 연산
+
+함수 : void motor_runr()
+역할 : 모터의 역 방향 회전을 설정하기 위한 함수
+사용 위치 : main, 
 void motor_runf()
 
 
