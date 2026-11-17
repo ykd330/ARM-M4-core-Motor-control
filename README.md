@@ -28,3 +28,35 @@ MAIN
 범위 : local
 값 : =motor_state, 10 : motor_state값 저장 설정 값
 
+motor.h
+변수 이름 : current
+역할 : motor_rev()에서 현재 모터 핀의 GPIO->ODR값을 저장하기 위한 변수
+모터의 완전 정지 이후 모터를 반대로 작동시키기 위해 ~연산으로 값 반전
+사용 위치 : motor_rev()
+범위 : local
+값 : 0x01 or 0x10 (current >> pinx) & 0x1로 값 추출
+
+
+2. 함수 설정
+MAIN
+
+motor.h
+함수 : void motor_Init(int PinA, int PinB)
+역할 : 모터와 연결된 GPIO와 모터의 기본 값 설정
+사용 위치 : main
+void motor_rev()
+void motor_runr()
+void motor_runf()
+
+
+key.h
+
+led.h
+
+clock.h
+
+usart.h
+
+sys.h
+
+
