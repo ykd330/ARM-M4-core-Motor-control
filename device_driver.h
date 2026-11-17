@@ -3,13 +3,11 @@
 #include "macro.h"
 #include "malloc.h"
 
+
 // Uart.c
 
 extern void Uart2_Init(int baud);
-extern void Uart1_Init(int baud);
-extern void Uart1_Send_Byte(char data);
-extern char Uart1_Get_Char(void);
-extern char Uart1_Get_Pressed(void);
+extern char Uart2_Get_Pressed(void);
 
 // SysTick.c
 
@@ -46,3 +44,11 @@ extern void TIM4_Repeat(int time);
 extern int TIM4_Check_Timeout(void);
 extern void TIM4_Stop(void);
 extern void TIM4_Change_Value(int time);
+
+// Motor.c
+extern void motor_Init(int PinA, int PinB);
+extern void motor_rev();
+extern void motor_run_r();
+extern void motor_run_f();
+extern void motor_stop_en();
+extern void motor_stop_de();

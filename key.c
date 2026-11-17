@@ -1,11 +1,10 @@
 #include "device_driver.h"
-#define KEY 7
+#define KEY 13
 
 void Key_Poll_Init(void)
 {
 	Macro_Set_Bit(RCC->AHB1ENR, 2); 
 	Macro_Write_Block(GPIOC->MODER, 0x3, 0x0, (KEY * 2));
-	Macro_Write_Block(GPIOC->MODER, 0x3, 0x0, (13 * 2));
 }
 
 /* 0: 디버깅용 설정 */
@@ -19,7 +18,7 @@ void Key_Poll_Init(void)
 
 static int Key_Check_Input(void)
 {
-	return Macro_Check_Bit_Clear(GPIOC->IDR, 7);	
+	return Macro_Check_Bit_Clear(GPIOC->IDR, KEY);	
 }
 
 int Key_Get_Pressed(void)

@@ -1,5 +1,9 @@
 #include "device_driver.h"
-
+#define CPU_CLOCK 96000000 
+#define TIM2_FREQ 50000
+#define TIM2_ARR_MAX 0xFFFFFFFF
+#define TIM2_PSC (CPU_CLOCK / TIM2_FREQ)
+#define TIM2_PPS 20
 
 
 void TIM2_Stopwatch_Start(void)
@@ -65,11 +69,6 @@ int TIM4_Check_Timeout(void)
 	int i = ((TIM4->SR >> 0) & 0x1) ? 1 : 0;
 	TIM4->SR &= ~(0x1 << 0);
 	return i;
-}
-
-void TIM4_Stop(void)
-{
-	Macro_Clear_Bit(TIM4->CR1, 0);
 }
 
 void TIM4_Stop(void)

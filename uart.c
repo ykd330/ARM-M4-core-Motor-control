@@ -34,3 +34,27 @@ void Uart2_Init(int baud)
   USART2->CR2 = 0<<12;
   USART2->CR3 = 0;
 }
+
+char Uart2_Get_Pressed(void)
+{
+  return ((USART2->SR >> 5) & 0x1) ? USART2->DR : 0;
+}
+
+// int Judge4Uart(const unsigned char value)
+// {
+//     switch (value)
+//     {
+//     case 'F':
+//     case 'f':
+//         return 1;
+//     case 'R':
+//     case 'r':
+//         return 2;
+//     default
+//         return -1;
+//     }
+//}
+int Judge4PWM(const int value)
+{
+    return 0;
+}
