@@ -145,4 +145,9 @@ EXTI15_10_IRQHandler() (PC13) (40)
  : PC13번 (내부 스위치)의 Falling Edge 발생 시 호출
  1. TIM4 Timer를 실행 시킨다.
  2. Button(flag) = 1로 바꾼다.
+
+ USART2_IRQHandler() (USART2) ()
+ : 터미널(teraterm)을 통해 문자를 입력 받으면 호출
+ 1. 문자를 입력 받으면 uart_data에 문자 입력
+ 2. TX를 통해 입력 받은 문자를 다시 터미널에 출력
  
