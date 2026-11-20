@@ -57,6 +57,9 @@ extern void motor_rev();
 extern void motor_run_r();
 extern void motor_run_f();
 extern void motor_stop();
-extern void motor_start();
+extern void motor_start(char dir);
 extern void motor_set_speed(unsigned long motor_speed);
+
 extern volatile unsigned char motor_state;
+extern volatile int Button;
+extern volatile unsigned long state;

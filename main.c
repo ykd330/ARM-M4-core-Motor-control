@@ -32,27 +32,18 @@ void Main(void)
 	Sys_Init(115200);
 	printf("\nChattering 제거 방식 Key_Get_Pressed() 동작 시험\n");
 	motor_Init(MOTOR_PIN_A, MOTOR_PIN_B);
-	volatile int i;
-	unsigned long motor_speed[] = {2000, 2500, 3000, 3500, 4000};
+	volatile int j;
+	volatile long i;
+	volatile unsigned long motor_speed[5] = {2000, 2500, 3000, 3500, 4000};
+	motor_start(0x01);
 	for (;;)
 	{
-		LED_Off();
-		printf("%d", (int)(GPIOC->IDR >> 13) & 0X1);
-		for (i = 0; i < 0x4000000; i++);
-		motor_stop();
-		printf("%x\n", motor_state);
-		for (i = 0; i < 0x4000000; i++);
-		motor_run_f();
-		printf("%x\n", motor_state);
-		motor_set_speed(motor_speed[3]);
-		for (i = 0; i < 0x4000000; i++);
-		motor_rev();
-		printf("%x\n", motor_state);
-		motor_set_speed(motor_speed[0]);
-		for (i = 0; i < 0x4000000; i++);
-		printf("%x\n", motor_state);
-		motor_set_speed(motor_speed[2]);
-		LED_On();
-		for (i = 0; i < 0x4000000; i++);
+		for (j = 0 ; j < 5; j++) {
+
+			for (i = 0; i < 0x8000000; i++);
+			motor_rev();
+			for (i = 0; i < 0x8000000; i++);
+			motor_set_speed(motor_speed[j]);
+		}
 	}
 }

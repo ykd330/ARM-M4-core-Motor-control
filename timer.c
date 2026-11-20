@@ -82,7 +82,7 @@ void TIM3_Interrupt_Enable(int en, int time)
 {
 	if(en)
 	{
-		Macro_Set_Bit(RCC->APB1ENR, 2);
+		Macro_Set_Bit(RCC->APB1ENR, 1);
 
 		TIM3->CR1 = (1<<4)|(1<<3);
 		TIM3->PSC = (unsigned int)(SYSCLK/TIM4_FREQ + 0.5)-1;

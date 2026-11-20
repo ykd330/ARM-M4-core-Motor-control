@@ -4,7 +4,6 @@ void LED_Init(void)
 {
 	/* 아래 코드 수정 금지 : Port-A Clock Enable */
 	Macro_Set_Bit(RCC->AHB1ENR, 0); 
-
 	Macro_Write_Block(GPIOA->MODER, 0x3, 0x1, 10);
 	Macro_Clear_Bit(GPIOA->OTYPER, 5);
 	Macro_Clear_Bit(GPIOA->ODR, 5); 

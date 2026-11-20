@@ -23,31 +23,32 @@ void motor_Init(int PinA, int PinB)
 
 void motor_rev()
 {
-	motor_state = GPIOA->AFR[0];
 	GPIOA->AFR[0] = 0;
 	Macro_Invert_Bit(motor_state, 0);
 	Macro_Invert_Bit(motor_state, 4);
-	TIM3_Interrupt_Enable(1, 750);
+	TIM3_Interrupt_Enable(1, 1000);
 }
 
-void motor_start() {
+void motor_start(char dir) {
+	motor_state = dir;
 	GPIOA->AFR[0] = motor_state;
 }
 
 void motor_run_f() {
-	GPIOA->AFR[0] = 0x01;
+	motor_state = 0x01;
+	GPIOA->AFR[0] = motor_state;
 }
 
 void motor_run_r() {
-	GPIOA->AFR[0] = 0x10;
+	motor_state = 0x10;
+	GPIOA->AFR[0] = motor_state;
 }
 
 void motor_stop() {
-	GPIOA->AFR[0] = 0;
+	GPIOA->AFR[0] = motor_state;
 }
 
 void motor_set_speed(unsigned long motor_speed) {
 	TIM2->CCR1 = motor_speed;
 	TIM2->CCR2 = motor_speed;
 }
-
