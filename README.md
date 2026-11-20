@@ -74,7 +74,10 @@ setup
 enum Motor_State { Motor_Run_F, Motor_Run_R }
 enum State { Motor_Off, Motor_On }
 
-local var : motor_speed[9]
+local var 
+: motor_speed[9]
+: current_state
+
 
 for(;;)
 1. uart_data가 입력되면 이를 감지하여 유효 값인지 검사하고 유효 값일 경우 Handler(state, motor_state, Button)의 값을 조절하여 작동부에 전달한다.
