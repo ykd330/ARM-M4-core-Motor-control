@@ -35,26 +35,72 @@ void Uart2_Init(int baud)
   USART2->CR3 = 0;
 }
 
-char Uart2_Get_Pressed(void)
+void Uart1_Init(int baud)
 {
-  return ((USART2->SR >> 5) & 0x1) ? USART2->DR : 0;
+  double div;
+  unsigned int mant;
+  unsigned int frac;
+
+  Macro_Set_Bit(RCC->AHB1ENR, 0);                   // PA9,10
+  Macro_Set_Bit(RCC->APB2ENR, 4);                   // USART1 ON
+  Macro_Write_Block(GPIOA->MODER, 0xf, 0xa, 18);    // PA9,10 => ALT
+  Macro_Write_Block(GPIOA->AFR[1], 0xff, 0x77, 4);  // PA9,10 => AF07
+  Macro_Write_Block(GPIOA->PUPDR, 0xf, 0x5, 18);    // PA9,10 => Pull-Up
+
+  div = PCLK2 / (16. * baud);
+  mant = (int)div;
+  frac = (int)((div - mant) * 16 + 0.5);
+  mant += frac >> 4;
+  frac &= 0xf;
+  USART1->BRR = (mant<<4)|(frac<<0);
+
+  USART1->CR1 = (1<<13)|(0<<12)|(0<<10)|(1<<3)|(1<<2);
+  USART1->CR2 = 0 << 12;
+  USART1->CR3 = 0;
 }
 
-// int Judge4Uart(const unsigned char value)
-// {
-//     switch (value)
-//     {
-//     case 'F':
-//     case 'f':
-//         return 1;
-//     case 'R':
-//     case 'r':
-//         return 2;
-//     default
-//         return -1;
-//     }
-//}
-int Judge4PWM(const int value)
+void Uart1_Send_Byte(char data)
 {
-    return 0;
+  if(data == '\n')
+  {
+    while(!Macro_Check_Bit_Set(USART1->SR, 7));
+    USART1->DR = 0x0d;
+  }
+
+  while(!Macro_Check_Bit_Set(USART1->SR, 7));
+  USART1->DR = data;
+}
+
+char Uart1_Get_Char(void)
+{
+	while(!Macro_Check_Bit_Set(USART1->SR, 5));
+	return (char)USART1->DR;
+}
+
+char Uart1_Get_Pressed(void)
+{
+	if(Macro_Check_Bit_Set(USART1->SR, 5))
+	{
+		return (char)USART1->DR;
+	}
+
+	else
+	{
+		return (char)0;
+	}
+}
+
+void Uart2_RX_Interrupt_Enable(int en)
+{
+  if(en)
+  {
+    Macro_Set_Bit(USART2->CR1, 5);
+    NVIC_ClearPendingIRQ(38);
+    NVIC_EnableIRQ(38);
+  }
+  else
+  {
+    Macro_Clear_Bit(USART2->CR1, 5);
+    NVIC_DisableIRQ(38);
+  }
 }

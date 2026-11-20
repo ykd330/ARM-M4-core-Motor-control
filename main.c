@@ -2,6 +2,10 @@
 #include <stdio.h>
 #define MOTOR_PIN_A 0
 #define MOTOR_PIN_B 1
+#define BUTTON_DELAY 2000
+#define MOTTOR_STOP 750
+
+
 
 enum Motor_State {
 	Motor_Run_F,
@@ -22,72 +26,33 @@ static void Sys_Init(int baud)
 	LED_Init();
 }
 
-/* Key.c의 옵션을 변경하면서 동작을 비교 실험 진행 */
 
 void Main(void)
 {
 	Sys_Init(115200);
 	printf("\nChattering 제거 방식 Key_Get_Pressed() 동작 시험\n");
 	motor_Init(MOTOR_PIN_A, MOTOR_PIN_B);
-
-	unsigned char lock = 0, state = 0, motor_state = 0, dir_change = 0, x = 0, on = 0;
+	volatile int i;
+	unsigned long motor_speed[] = {2000, 2500, 3000, 3500, 4000};
 	for (;;)
 	{
-		x = Uart2_Get_Pressed(); 
-		if (x != 0) {
-			USART2->DR = x;
-			if((x == 's') || (x == 'S')) {
-				state = Motor_Off;
-			}
-			else {
-				if ((x == 'r') || (x == 'R')) {
-					state = Motor_On;
-					motor_state = Motor_Run_R;
-				}
-				else if ((x == 'f') || (x == 'F')) {
-					state = Motor_On;
-					motor_state = Motor_Run_F;
-				}
-				else if ((1 <= x) && (9 >= x)) {
-				}
-			}
-		}
-		x = 0;
-
-		if ((lock == 0) && Macro_Check_Bit_Set(GPIOC->IDR, 13)) {
-			lock = 1;
-			state = Motor_On;
-			if (Macro_Check_Bit_Set(GPIOA->ODR, 0) == Macro_Check_Bit_Set(GPIOA->ODR, 1))
-				Macro_Invert_Bit(GPIOA->ODR, 0);
-			else
-				motor_state = !motor_state;
-			LED_Display(on ^= 0x1);
-		}
-		else if ((lock == 1) && Macro_Check_Bit_Clear(GPIOC->IDR, 13)) lock = 0;
-
-
-
-		if (state == Motor_Off)
-		{
-			motor_stop_de();
-			dir_change = 10;
-		}
-		else if (state == Motor_On)
-		{
-			if(dir_change == 10){
-				if(motor_state == Motor_Run_F) {
-					dir_change = motor_state;
-					motor_run_f();
-				}
-				else if(motor_state == Motor_Run_R) {
-					dir_change = motor_state;
-					motor_run_r();
-				}
-			}
-			if(dir_change != motor_state) {
-				motor_rev();
-				dir_change = motor_state;
-			}
-		}
+		LED_Off();
+		printf("%d", (int)(GPIOC->IDR >> 13) & 0X1);
+		for (i = 0; i < 0x4000000; i++);
+		motor_stop();
+		printf("%x\n", motor_state);
+		for (i = 0; i < 0x4000000; i++);
+		motor_run_f();
+		printf("%x\n", motor_state);
+		motor_set_speed(motor_speed[3]);
+		for (i = 0; i < 0x4000000; i++);
+		motor_rev();
+		printf("%x\n", motor_state);
+		motor_set_speed(motor_speed[0]);
+		for (i = 0; i < 0x4000000; i++);
+		printf("%x\n", motor_state);
+		motor_set_speed(motor_speed[2]);
+		LED_On();
+		for (i = 0; i < 0x4000000; i++);
 	}
 }
