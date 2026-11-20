@@ -4,7 +4,6 @@ MOTOR CONTROL PROJECT
 
 LED : On / Off 확인 용
 
-
 1. 변수 설정
 MAIN 
 변수 이름 : state
@@ -18,7 +17,7 @@ MAIN
 크기 : 4B
 역할 : motor의 회전 방향 제어 | Interrupt, Oper Handler
 사용 위치 : main
-범위 : Local
+범위 : Global
 값 :  GPIOA->AFR[0]
 
 변수 이름 : change
@@ -97,25 +96,30 @@ TIM2->CR1 : (ARPE(7) : 0), (DIR(4) : 1(Down Counter 사용)), (OPM(3) : 0(Repeat
 반환 값 : void
 전달 인자 : void
 내부 구조 : 
-motor_state에  GPIOA->AFR[0]값을 저장하고 GPIOA->AFR[0]에 0을 대입한다.
-TIM3를 초기화하고 실행한다.
+GPIOA->AFR[0]을 0으로 대입해 PWM 출력을 멈춘다.
+motor_state의 0번 째와 4번 째 bit를 반전시킨다. 
+TIM3_Interrupt_Enable 함수를 실행한다.
 
 
 함수 : motor_run_r()
 역할 : 모터의 역방향 회전을 설정하기 위한 함수
 사용 위치 : main
 반환 값 : void
-전달 인자 : motor_state
-내부 구조 : GPIOA->AFR[0] 값을 0x10으로 대입하여 회전 방향을 역 방향으로 설정한다.
+전달 인자 : void
+내부 구조 : 
+motor_state에 0x10을 대입한다.
+GPIOA->AFR[0]에 motor_state를 대입하여 회전 방향을 역방향으로 설정한다.
 
 함수 : void motor_run_f()
 역할 : 모터의 정방향 회전을 설정하기 위한 함수
 사용 위치 : main
 반환 값 : void
 전달 인자 : void
-내부 구조 : GPIOA->AFR[0] 값을 0x01로 대입하여 회전 방향을 정 방향으로 설정한다.
+내부 구조 :
+motor_state에 0x10을 대입한다.
+GPIOA->AFR[0]에 motor_state를 대입하여 회전 방향을 정방향으로 설정한다.
 
-함수 : motor_set_speed(unsigned long speed)
+함수 : motor_set_speed(unsigned long motor_speed)
 역할 : 모터의 DutyRate을 바꾸어 속도를 조절하는 역할
 사용 위치 : main
 반환 값 : void
@@ -133,7 +137,8 @@ Interrupt 설정
 
 TIM3_IRQHandler() (TIM3) (29)
  : TIM3 TimeOut 발생 시 호출
- 1. GPIOA->AFR[0] = (Macro_Inverse_bit(motor_state, 0) | Macro_Inverse_bit(motor_state, 4));
+ 1. GPIOA->AFR[0]에 motor_state 대입
+ 2. TIM3_Interrupt_Enable(0, 0)함수를 호출하여 TIM3의 인터럽트 기능을 종료한다.
 
 TIM4_IRQHandler() (TIM 4) (30) 
  : TIM4 TimeOut 발생 시 호출
