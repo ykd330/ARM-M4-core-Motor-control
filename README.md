@@ -68,6 +68,19 @@ MAIN
 
 main
 
+setup
+#define MOTOR_PIN_A 0 : GPIOA의 모터핀 (PA0)
+#define MOTOR_PIN_B 1 : GPIOA의 모터핀 (PA1)
+enum Motor_State { Motor_Run_F, Motor_Run_R }
+enum State { Motor_Off, Motor_On }
+
+local var : motor_speed[9]
+
+for(;;)
+1. uart_data가 입력되면 이를 감지하여 유효 값인지 검사하고 유효 값일 경우 Handler(state, motor_state, Button)의 값을 조절하여 작동부에 전달한다.
+2. state, motor_state, Button의 값에 따라 모터가 설정한 동작을 수행할 수 있도록 한다.
+
+
 
 
 motor.c
