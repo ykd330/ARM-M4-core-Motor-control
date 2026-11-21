@@ -18,14 +18,7 @@ MAIN
 역할 : motor의 회전 방향 제어 | Interrupt, Oper Handler
 사용 위치 : main
 범위 : Global
-값 :  GPIOA->AFR[0]
-
-변수 이름 : change
-크기 : 1B
-역할 : motor의 회전 방향 제어 | Event Handler
-사용 위치 : main
-범위 : Local
-값 : 0 : F, 1 : R (enum MotorState : Motor_Run_F, Motor_Run_R)
+값 :  0x01, 0x10 (enum Motor_State : Motor_run_F, Motor_run_R)
 
 변수 이름 : uart_data
 크기 : 1B (unsigned char)
@@ -36,7 +29,7 @@ MAIN
 
 변수 이름 : current_state
 크기 : 1B
-역할 : motor_state 변경에 따른 motor_reverse()의 동작 유무를 결정하기 위해 현재 motor_state의 상태를 저장하기 위한 변수
+역할 : motor_state 변경에 따른 motor_rev()의 동작 유무를 결정하기 위해 현재 motor의 상태를 저장하기 위한 변수
 사용 위치 : main
 범위 : Local
 값 : = motor_state, 10 : motor_state값 저장 설정 값
@@ -71,7 +64,7 @@ main
 setup
 #define MOTOR_PIN_A 0 : GPIOA의 모터핀 (PA0)
 #define MOTOR_PIN_B 1 : GPIOA의 모터핀 (PA1)
-enum Motor_State { Motor_Run_F, Motor_Run_R }
+enum Motor_State { Motor_Run_F = 0x01, Motor_Run_R = 0x10 }
 enum State { Motor_Off, Motor_On }
 
 local var 
@@ -116,31 +109,28 @@ GPIOA->AFR[0]을 0으로 대입해 PWM 출력을 멈춘다.
 motor_state의 0번 째와 4번 째 bit를 반전시킨다. 
 TIM3_Interrupt_Enable 함수를 실행한다.
 
-
-함수 : motor_run_r()
-역할 : 모터의 역방향 회전을 설정하기 위한 함수
+함수 : motor_set_dir
+역할 : 모터의 회전방향을 설정하기 위한 함수
 사용 위치 : main
 반환 값 : void
-전달 인자 : void
+전달 인자 : unsigned char - dir
 내부 구조 : 
-motor_state에 0x10을 대입한다.
-GPIOA->AFR[0]에 motor_state를 대입하여 회전 방향을 역방향으로 설정한다.
+입력 받은 dir(F : 0x01, R : 0x10)을 GPIOA->AFR[0]에 대입한다.
 
-함수 : void motor_run_f()
-역할 : 모터의 정방향 회전을 설정하기 위한 함수
-사용 위치 : main
-반환 값 : void
-전달 인자 : void
-내부 구조 :
-motor_state에 0x10을 대입한다.
-GPIOA->AFR[0]에 motor_state를 대입하여 회전 방향을 정방향으로 설정한다.
-
-함수 : motor_set_speed(unsigned long motor_speed)
+함수 : motor_set_speed
 역할 : 모터의 DutyRate을 바꾸어 속도를 조절하는 역할
 사용 위치 : main
 반환 값 : void
-전달 인자 : duty_rate[] (2000 ~ 4000)
+전달 인자 : (unsigned long motor_speed) [duty_rate[]] (2000 ~ 4000)
 내부 구조 : TIM2->CCR1, TIM2->CCR2 값에 전달 받은 인자를 대입한다. 
+
+함수 : get_motor_state()
+역할 : 모터의 현재 회전 방향을 반환하는 함수
+사용 위치 : main
+반환 값 : unsigned char
+전달 인자 : void
+내부 구조 :
+함수 호출 시 현재 GPIOA->AFR[0]의 값을 반환한다.
 
 Timer 설정
 TIM2 : Ch.1, Ch.2 모터의 PWM출력
