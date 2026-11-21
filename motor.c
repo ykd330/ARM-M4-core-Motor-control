@@ -52,3 +52,7 @@ void motor_set_speed(unsigned long motor_speed) {
 	TIM2->CCR1 = motor_speed;
 	TIM2->CCR2 = motor_speed;
 }
+
+unsigned char get_motor_state() {
+	return GPIOA->AFR[0];
+}

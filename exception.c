@@ -32,21 +32,13 @@ void USART2_IRQHandler(void)
 	NVIC_ClearPendingIRQ(37);
 }
 
-volatile unsigned char motor_state;
-
 void TIM3_IRQHandler(void) {
 	GPIOA->AFR[0] = motor_state;
-	Macro_Clear_Bit(TIM3->SR, 0);
-	NVIC_ClearPendingIRQ(29);
+	TIM3_Interrupt_Enable(0, 0);
 }
 
 void TIM4_IRQHandler(void)
 {
-	
-
-	
-
-	Macro_Clear_Bit(TIM4->SR, 0);
-	NVIC_ClearPendingIRQ(30);
+	TIM4_Repeat_Interrupt_Enable(0);
+	state = !state;
 }
-

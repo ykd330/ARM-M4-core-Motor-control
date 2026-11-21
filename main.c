@@ -2,17 +2,15 @@
 #include <stdio.h>
 #define MOTOR_PIN_A 0
 #define MOTOR_PIN_B 1
-#define BUTTON_DELAY 2000
-#define MOTTOR_STOP 750
 
-
-
-enum Motor_State {
+enum Motor_State
+{
 	Motor_Run_F,
 	Motor_Run_R
 };
 
-enum State {
+enum State
+{
 	Motor_Off,
 	Motor_On
 };
@@ -26,24 +24,33 @@ static void Sys_Init(int baud)
 	LED_Init();
 }
 
-
 void Main(void)
 {
 	Sys_Init(115200);
-	printf("\nChattering 제거 방식 Key_Get_Pressed() 동작 시험\n");
+	Key_ISR_Enable(1);
 	motor_Init(MOTOR_PIN_A, MOTOR_PIN_B);
-	volatile int j;
-	volatile long i;
-	volatile unsigned long motor_speed[5] = {2000, 2500, 3000, 3500, 4000};
-	motor_start(0x01);
+	unsigned char current_state;
+	volatile unsigned long motor_speed[9] = {2000, 2400, 2600, 2800, 3000, 3200, 3400, 3600, 4000};
 	for (;;)
 	{
-		for (j = 0 ; j < 5; j++) {
 
-			for (i = 0; i < 0x8000000; i++);
-			motor_rev();
-			for (i = 0; i < 0x8000000; i++);
-			motor_set_speed(motor_speed[j]);
+		if (state == Motor_Off)
+		{
+			LED_Off();
+			motor_stop();
+			current_state = get_motor_state();
+		}
+		else if (state == Motor_On)
+		{
+			LED_On();
+			if (motor_state != current_state)
+				motor_start(motor_state);
+			if (Button && (Key_Check_Input() == 0))
+			{
+				TIM4_Repeat_Interrupt_Enable(0);
+				Button = 0;
+				motor_rev();
+			}
 		}
 	}
 }
