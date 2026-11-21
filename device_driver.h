@@ -64,3 +64,4 @@ extern unsigned char get_motor_state();
 extern volatile unsigned char motor_state;
 extern volatile int Button;
 extern volatile unsigned long state;
+extern volatile unsigned char uart_data;
