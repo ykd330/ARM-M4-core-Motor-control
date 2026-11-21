@@ -11,16 +11,6 @@ int Key_Get_Pressed(void)
 	return Macro_Check_Bit_Clear(GPIOC->IDR, 13);	
 }
 
-void Key_Wait_Key_Pressed(void)
-{
-	while(!Macro_Check_Bit_Clear(GPIOC->IDR, 13));
-}
-
-void Key_Wait_Key_Released(void)
-{
-	while(!Macro_Check_Bit_Set(GPIOC->IDR, 13));
-}
-
 void Key_ISR_Enable(int en)
 {
 	if(en)

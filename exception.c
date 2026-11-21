@@ -11,34 +11,28 @@ void _Invalid_ISR(void)
 
 void EXTI15_10_IRQHandler(void)
 {
-	volatile int i;
-
-	printf("\nEXTI15_10(40) IN\n");
-	for(i=0; i<0x1000000; i++);
-	printf("XTI15_10(40) OUT\n\n");
-	
+	Button = 1;
+	TIM4_Repeat_Interrupt_Enable(1);
 	EXTI->PR = 0x1 << 13;
 	NVIC_ClearPendingIRQ(40);
 }
 
 void USART2_IRQHandler(void)
 {
-	volatile int i;
+    uart_data = (unsigned char)USART2->DR;
+    USART2->DR = uart_data;
 
-	printf("\nUSART2(38) IN: %c\n", (char)USART2->DR);
-	for(i=0; i<0x1000000; i++);
-	printf("USART2(38) OUT\n\n");
-
-	NVIC_ClearPendingIRQ(37);
+    NVIC_ClearPendingIRQ(38);
 }
 
 void TIM3_IRQHandler(void) {
-	GPIOA->AFR[0] = motor_state;
 	TIM3_Interrupt_Enable(0, 0);
+	motor_start_interrupt = 0;
 }
 
 void TIM4_IRQHandler(void)
 {
-	TIM4_Repeat_Interrupt_Enable(0);
+	TIM4_Interrupt_Enable(0, 0);
+	Button = 0;
 	state = !state;
 }

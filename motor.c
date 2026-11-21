@@ -2,6 +2,8 @@
 #define MOTOR_FREQ 8000000.
 #define MOTOR_PSC ((int)(((SYSCLK / MOTOR_FREQ) + 0.5)) - 1)
 #define MOTOR_ARR 4000.
+volatile unsigned char motor_state;
+volatile unsigned char motor_start_interrupt = 0;
 
 void motor_Init(int PinA, int PinB)
 {
@@ -26,19 +28,26 @@ void motor_rev()
 	GPIOA->AFR[0] = 0;
 	Macro_Invert_Bit(motor_state, 0);
 	Macro_Invert_Bit(motor_state, 4);
+	motor_start_interrupt = 1;
 	TIM3_Interrupt_Enable(1, 1000);
 }
 
 void motor_start() {
-	GPIOA->AFR[0] = motor_state;
-}
-
-void motor_set_dir(unsigned char dir) {
-	motor_state = dir;
+	if (!motor_start_interrupt)
+		GPIOA->AFR[0] = motor_state;
 }
 
 void motor_stop() {
 	GPIOA->AFR[0] = 0x00;
+}
+
+void motor_set_dir(unsigned char dir) {
+	if(motor_state == dir) return;
+	GPIOA->AFR[0] = 0x00;
+	
+	motor_state = dir;
+	motor_start_interrupt = 1;
+	TIM3_Interrupt_Enable(1, 1000);
 }
 
 void motor_set_speed(unsigned long motor_speed) {

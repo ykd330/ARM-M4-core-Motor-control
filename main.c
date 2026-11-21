@@ -15,6 +15,10 @@ enum State
 	Motor_On
 };
 
+const unsigned long motor_speed[9] = {2000, 2400, 2600, 2800, 3000, 3200, 3400, 3600, 4000};
+volatile int Button = 0;
+volatile unsigned long state = 0;
+volatile unsigned char uart_data = 0;
 
 static void Sys_Init(int baud)
 {
@@ -30,34 +34,51 @@ void Main(void)
 	Sys_Init(115200);
 	Key_ISR_Enable(1);
 	motor_Init(MOTOR_PIN_A, MOTOR_PIN_B);
-	unsigned char current_state;
-	unsigned long motor_speed[9] = {2000, 2400, 2600, 2800, 3000, 3200, 3400, 3600, 4000};
+	Uart2_RX_Interrupt_Enable(1);
+	printf("start motor test");
+	motor_set_dir(Motor_Run_F);
 	for (;;)
 	{
-
-		if (state == Motor_Off)
+		
+		if (uart_data != 0)
 		{
+			if ((uart_data == 'R') || (uart_data == 'r'))
+			{
+				motor_set_dir(Motor_Run_R);
+			}
+			else if ((uart_data == 'F') || (uart_data == 'f'))
+			{
+				motor_set_dir(Motor_Run_F);
+			}
+			else if ((uart_data >= '1') && (uart_data <= '9'))
+			{
+				motor_set_speed(motor_speed[uart_data - '1']);
+			}
+			uart_data = 0;
+		}
+
+		if ((Button && !Key_Get_Pressed()))
+		{
+			TIM4_Repeat_Interrupt_Enable(0);
+			Button = 0;
+			motor_rev();
+		}
+
+		switch (state)
+		{
+		case Motor_Off:
+
 			LED_Off();
 			motor_stop();
-			current_state = get_motor_state();
-		}
-		else if (state == Motor_On)
-		{
+
+			break;
+		
+		case Motor_On:
+
 			LED_On();
-			if (motor_state != current_state){
-				motor_set_dir(motor_state);
-				motor_start();
-				current_state = motor_state;
-			}
-			if(get_motor_state() == 0) {
-				motor_start();
-			}
-			if (Button && (Key_Check_Input() == 0))
-			{
-				TIM4_Repeat_Interrupt_Enable(0);
-				Button = 0;
-				motor_rev();
-			}
+			motor_start();
+
+			break;
 		}
 	}
 }
