@@ -29,19 +29,12 @@ void motor_rev()
 	TIM3_Interrupt_Enable(1, 1000);
 }
 
-void motor_start(char dir) {
+void motor_start() {
+	GPIOA->AFR[0] = motor_state;
+}
+
+void motor_set_dir(char dir) {
 	motor_state = dir;
-	GPIOA->AFR[0] = motor_state;
-}
-
-void motor_run_f() {
-	motor_state = 0x01;
-	GPIOA->AFR[0] = motor_state;
-}
-
-void motor_run_r() {
-	motor_state = 0x10;
-	GPIOA->AFR[0] = motor_state;
 }
 
 void motor_stop() {

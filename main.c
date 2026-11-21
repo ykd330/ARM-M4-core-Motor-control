@@ -5,8 +5,8 @@
 
 enum Motor_State
 {
-	Motor_Run_F,
-	Motor_Run_R
+	Motor_Run_F = 0x01,
+	Motor_Run_R = 0x10
 };
 
 enum State
@@ -14,6 +14,7 @@ enum State
 	Motor_Off,
 	Motor_On
 };
+
 
 static void Sys_Init(int baud)
 {
@@ -30,7 +31,7 @@ void Main(void)
 	Key_ISR_Enable(1);
 	motor_Init(MOTOR_PIN_A, MOTOR_PIN_B);
 	unsigned char current_state;
-	volatile unsigned long motor_speed[9] = {2000, 2400, 2600, 2800, 3000, 3200, 3400, 3600, 4000};
+	unsigned long motor_speed[9] = {2000, 2400, 2600, 2800, 3000, 3200, 3400, 3600, 4000};
 	for (;;)
 	{
 
