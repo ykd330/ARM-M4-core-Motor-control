@@ -25,36 +25,36 @@ MOTOR CONTROL PROJECT
   * **크기:** 1B
   * **역할:** motor의 on / off set | Event Handler
   * **사용 위치:** `main.c` (`volatile`), `exception.c` (`device_driver`: `extern volatile`)
-  * **범위:** Global
+  * **범위:** `Global`
   * **값:** `0` : off, `1` : on (`enum State` : `Motor_Off`, `Motor_On`)
 
 * **`uart_data`**
   * **크기:** 1B (`unsigned char`)
   * **역할:** USART통신을 통해 받은 문자를 저장 | Event Handler
   * **사용 위치:** `main` (`volatile`), `exeption.c` (`extern volatile`)
-  * **범위:** Local
+  * **범위:** `Local`
   * **값:** 문자 및 숫자 / 유효값 : `'R'`, `'r'`, `'F'`, `'f'`, `'1'` ~ `'9'`
 
 * **`duty_rate[9]`**
   * **크기:** 9B (`1B x 9`)
   * **역할:** UART의 PWM 설정 입력 값인 1~9를 50% ~ 100% 값에 미리 설정해두기 위한 배열 변수 | Event Handler
   * **사용 위치:** `main`
-  * **범위:** Local
+  * **범위:** `Local`
   * **값:** `2000` ~ `4000`
 
 * **`Button`**
   * **크기:** 1B
   * **역할:** GPIOC - PC13 스위치 Interrupt flag | Event Handler
   * **사용 위치:** `main` (`volatile`), `exception.c` (`extern volatile`)
-  * **범위:** Global
+  * **범위:** `Global`
   * **값:** `0` : stable, `1` : flag
 
 * **`motor_speed`**
   * **크기:** 4B
   * **역할:** CCR 값 저장용
   * **사용 위치:** `main`
-  * **범위:** Local
-  * **값:** `2000` ~ `4000`
+  * **범위:** `Local`
+  * **값:** `2000` ~ `4000`, '[2000, 2400, 2600, 2800, 3000, 3200, 3400, 3600, 4000]'
 
 ### `motor.c`
 
@@ -62,14 +62,14 @@ MOTOR CONTROL PROJECT
   * **크기:** 4B
   * **역할:** motor의 회전 방향 제어 | Interrupt, Oper Handler
   * **사용 위치:** `motor.c`
-  * **범위:** Global
+  * **범위:** `Global`
   * **값:** `0x01`, `0x10` (`enum Motor_State` : `Motor_run_F`, `Motor_run_R`)
 
 * **`motor_start_interrupt`**
   * **크기:** 1B
   * **역할:** 모터의 방향 전환을 위한 start lock용 변수
   * **사용 위치:** `motor.c` (`volatile`), `exception.c` (`device_driver` : `extern volatile`)
-  * **범위:** Global
+  * **범위:** `Global`
   * **값:** `0` (lock), `1` (unlock)
 
 ---
@@ -171,7 +171,7 @@ MOTOR CONTROL PROJECT
 ## 3. Timer 설정
 
 * **TIM2:** Ch.1, Ch.2 모터의 PWM 출력
-* **TIM3:** 내부 스위치의 눌린 시간이 2초 이내일 경우 모터의 반전을 수행하기 위해 모터의 방향 전환 전 모터의 정지를 위한 시간을 측정하는 Timer
+* **TIM3:** 모터의 안전한 방향 전환을 위한 Timer
   * 목표 시간 : `1000ms`
 * **TIM4:** 내부 스위치의 눌린 시간을 측정하는 Timer
   * 목표 시간 : `2000ms`
