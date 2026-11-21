@@ -44,8 +44,14 @@ void Main(void)
 		else if (state == Motor_On)
 		{
 			LED_On();
-			if (motor_state != current_state)
-				motor_start(motor_state);
+			if (motor_state != current_state){
+				motor_set_dir(motor_state);
+				motor_start();
+				current_state = motor_state;
+			}
+			if(get_motor_state() == 0) {
+				motor_start();
+			}
 			if (Button && (Key_Check_Input() == 0))
 			{
 				TIM4_Repeat_Interrupt_Enable(0);

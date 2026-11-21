@@ -33,12 +33,12 @@ void motor_start() {
 	GPIOA->AFR[0] = motor_state;
 }
 
-void motor_set_dir(char dir) {
+void motor_set_dir(unsigned char dir) {
 	motor_state = dir;
 }
 
 void motor_stop() {
-	GPIOA->AFR[0] = motor_state;
+	GPIOA->AFR[0] = 0x00;
 }
 
 void motor_set_speed(unsigned long motor_speed) {

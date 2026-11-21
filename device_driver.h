@@ -54,10 +54,9 @@ extern void TIM4_Interrupt_Enable(int en, int time);
 // Motor.c
 extern void motor_Init(int PinA, int PinB);
 extern void motor_rev();
-extern void motor_run_r();
-extern void motor_run_f();
+extern void motor_set_dir(unsigned char dir);
 extern void motor_stop();
-extern void motor_start(char dir);
+extern void motor_start();
 extern void motor_set_speed(unsigned long motor_speed);
 extern unsigned char get_motor_state();
 
