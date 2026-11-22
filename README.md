@@ -47,7 +47,7 @@ MOTOR CONTROL PROJECT
   - **역할:** USART2 수신 문자를 저장 (`Event Handler`)
   - **사용 위치:** `main.c`, `exception.c` (`extern volatile`)
   - **범위:** `Global`
-  - **값:** 수신 문자 / 유효값: `'R'`, `'r'`, `'F'`, `'f'`, `'1'` ~ `'9'`, `'S'`, `'s'`
+  - **값:** 수신 문자 / 유효값: `'R'`, `'r'`, `'F'`, `'f'`, `'1'` ~ `'9'`
 
 - **`motor_speed[9]`**
   - **크기:** 36B (`4B x 9`, `const unsigned long`)
