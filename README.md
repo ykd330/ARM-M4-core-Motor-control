@@ -183,7 +183,7 @@ MOTOR CONTROL PROJECT
   - `TIM4_TICK` : `20us`
   - `TIM4_FREQ` : `1000000` / `TIM4_TICK` = `50000Hz`
   - `TIME4_PLS_OF_1ms` : `1000` / `TIM4_TICK` = `50EA`
-  - `TIM4_TICK` : `100us`
+  - `TIM_TICK` : `100us`
   - `TIM_FREQ` : `1000000` / `TIM_TICK` = `10000Hz`
   - `TIM_PLS_OF_1ms` : `1000` / `TIM_TICK` = `10EA`
 
