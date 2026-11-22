@@ -14,6 +14,20 @@ MOTOR CONTROL PROJECT
    - [motor.c](#motorc-1)
 3. [Timer 설정](#3-timer-설정)
 4. [Interrupt 설정 - exception.c](#4-interrupt-설정---exceptionc)
+5. [기존 드라이버/예제 함수 목록](#5-기존-드라이버예제-함수-목록)
+
+---
+
+## 구현 목표
+
+### 기본 구현
+1. 내부 스위치(PC13)를 약 2초간 누르면 모터가 On / Off 전환됨
+2. 내부 스위치를 2초 이내로 누르고 떼면 모터의 회전 방향이 바뀜
+3. 시리얼 터미널을 통해 `F`/`f`, `R`/`r`, `1` ~ `9`, `S`/`s` 입력 시 방향 전환, 속도 조절, On/Off 제어 수행
+
+### 추가 구현
+1. 외부 스위치(PB1, PB2) 인터럽트로 모터 속도를 단계별로 조절
+2. `BUS_EXT` 보드와 I2C1 통신(`SC16IS752`)을 통해 보드의 8개 LED(GPIO)로 현재 모터 속도 표시
 
 ---
 
@@ -21,56 +35,77 @@ MOTOR CONTROL PROJECT
 
 ### MAIN
 
-* **`state`**
-  * **크기:** 1B
-  * **역할:** motor의 on / off set | Event Handler
-  * **사용 위치:** `main.c` (`volatile`), `exception.c` (`device_driver`: `extern volatile`)
-  * **범위:** `Global`
-  * **값:** `0` : off, `1` : on (`enum State` : `Motor_Off`, `Motor_On`)
+- **`state`**
+  - **크기:** 4B (`unsigned long`, `enum State`)
+  - **역할:** 모터 On / Off 상태 저장 (`Event Handler`)
+  - **사용 위치:** `main.c` (`volatile`), `exception.c` (`device_driver.h`: `extern volatile`)
+  - **범위:** `Global`
+  - **값:** `0` (`Motor_Off`), `1` (`Motor_On`)
 
-* **`uart_data`**
-  * **크기:** 1B (`unsigned char`)
-  * **역할:** USART통신을 통해 받은 문자를 저장 | Event Handler
-  * **사용 위치:** `main` (`volatile`), `exeption.c` (`extern volatile`)
-  * **범위:** `Local`
-  * **값:** 문자 및 숫자 / 유효값 : `'R'`, `'r'`, `'F'`, `'f'`, `'1'` ~ `'9'`
+- **`uart_data`**
+  - **크기:** 1B (`unsigned char`)
+  - **역할:** USART2 수신 문자를 저장 (`Event Handler`)
+  - **사용 위치:** `main.c`, `exception.c` (`extern volatile`)
+  - **범위:** `Global`
+  - **값:** 수신 문자 / 유효값: `'R'`, `'r'`, `'F'`, `'f'`, `'1'` ~ `'9'`, `'S'`, `'s'`
 
-* **`duty_rate[9]`**
-  * **크기:** 9B (`1B x 9`)
-  * **역할:** UART의 PWM 설정 입력 값인 1~9를 50% ~ 100% 값에 미리 설정해두기 위한 배열 변수 | Event Handler
-  * **사용 위치:** `main`
-  * **범위:** `Local`
-  * **값:** `2000` ~ `4000`
+- **`motor_speed[9]`**
+  - **크기:** 36B (`4B x 9`, `const unsigned long`)
+  - **역할:** `motor_PWM` 인덱스(`0 ~ 8`)를 실제 PWM `CCR` 값으로 매핑 (50% ~ 100% 수준)
+  - **사용 위치:** `main.c`
+  - **범위:** `Global` (`const`)
+  - **값:** `{2000, 2400, 2600, 2800, 3000, 3200, 3400, 3600, 4000}`
 
-* **`Button`**
-  * **크기:** 1B
-  * **역할:** GPIOC - PC13 스위치 Interrupt flag | Event Handler
-  * **사용 위치:** `main` (`volatile`), `exception.c` (`extern volatile`)
-  * **범위:** `Global`
-  * **값:** `0` : stable, `1` : flag
+- **`Button`**
+  - **크기:** 4B (`int`)
+  - **역할:** `GPIOC` `PC13` 스위치 인터럽트 플래그 (`Event Handler`)
+  - **사용 위치:** `main.c`, `exception.c` (`extern volatile`)
+  - **범위:** `Global`
+  - **값:** `0` (정상/대기), `1` (눌림 감지 플래그)
 
-* **`motor_speed`**
-  * **크기:** 4B
-  * **역할:** CCR 값 저장용
-  * **사용 위치:** `main`
-  * **범위:** `Local`
-  * **값:** `2000` ~ `4000`, '[2000, 2400, 2600, 2800, 3000, 3200, 3400, 3600, 4000]'
+- **`motor_PWM`**
+  - **크기:** 1B (`char` / `unsigned char`)
+  - **역할:** `motor_speed` 배열 인덱스 저장
+  - **사용 위치:** `main.c`, `exception.c` (`extern volatile`)
+  - **범위:** `Global`
+  - **값:** `0 ~ 8` (초기값 `8`)
+
+- **`PWM_refresh`**
+  - **크기:** 4B (`int` 등)
+  - **역할:** `BUS_EXT` 보드의 LED(`motor_PWM`) 갱신 요청 플래그 (`Event Handler`)
+  - **사용 위치:** `main.c`, `exception.c` (`extern volatile`)
+  - **범위:** `Global`
+  - **값:** `0`, `1`
 
 ### `motor.c`
 
-* **`motor_state`**
-  * **크기:** 4B
-  * **역할:** motor의 회전 방향 제어 | Interrupt, Oper Handler
-  * **사용 위치:** `motor.c`
-  * **범위:** `Global`
-  * **값:** `0x01`, `0x10` (`enum Motor_State` : `Motor_run_F`, `Motor_run_R`)
+- **`A`**
+  - **크기:** 4B (`int`)
+  - **역할:** 모터 제어 `Pin A` 번호 저장 및 내부 공유
+  - **사용 위치:** `motor.c`
+  - **범위:** `Global` (`static`)
+  - **값:** `MOTOR_PIN_A` (`PA0` 기준 `0`)
 
-* **`motor_start_interrupt`**
-  * **크기:** 1B
-  * **역할:** 모터의 방향 전환을 위한 start lock용 변수
-  * **사용 위치:** `motor.c` (`volatile`), `exception.c` (`device_driver` : `extern volatile`)
-  * **범위:** `Global`
-  * **값:** `0` (lock), `1` (unlock)
+- **`B`**
+  - **크기:** 4B (`int`)
+  - **역할:** 모터 제어 `Pin B` 번호 저장 및 내부 공유
+  - **사용 위치:** `motor.c`
+  - **범위:** `Global` (`static`)
+  - **값:** `MOTOR_PIN_B` (`PA1` 기준 `1`)
+
+- **`EN`**
+  - **크기:** 4B (`int`)
+  - **역할:** 모터 드라이버 Enable 핀 번호 저장 및 내부 공유
+  - **사용 위치:** `motor.c`
+  - **범위:** `Global` (`static`)
+  - **값:** `MOTOR_EN` (`PA4` 기준 `4`)
+
+- **`motor_start_interrupt`**
+  - **크기:** 1B (`volatile` 등)
+  - **역할:** 방향 전환 중 모터 구동을 일시 잠금(Lock)하는 플래그
+  - **사용 위치:** `motor.c`, `exception.c` (`extern volatile`)
+  - **범위:** `Global`
+  - **값:** `0` (해제/허용), `1` (잠금/금지)
 
 ---
 
@@ -78,123 +113,91 @@ MOTOR CONTROL PROJECT
 
 ### MAIN
 
-#### `main`
+#### `Sys_Init(int baud)` & `Main(void)`
 
-* **Setup**
-  * `#define MOTOR_PIN_A 0` : GPIOA의 모터핀 (`PA0`)
-  * `#define MOTOR_PIN_B 1` : GPIOA의 모터핀 (`PA1`)
-  * `enum Motor_State { Motor_Run_F = 0x01, Motor_Run_R = 0x10 }`
-  * `enum State { Motor_Off, Motor_On }`
-  * **Local var:** `motor_speed[9] = 2000, 2400, 2600, 2800, 3000, 3200, 3400, 3600, 4000` (PWM 50% ~ 100%)
+- **초기화 (`Sys_Init`)**
+  - `SCB->CPACR`: FPU(CP10, CP11) 접근 활성화
+  - `Clock_Init()`: 시스템 클럭 및 주변장치 클럭 설정
+  - `Uart2_Init(baud)`: USART2 통신 레지스터 설정 (`PA2`/`PA3`, AF7)[cite: 2]
+  - `LED_Init()`: `PA5` 내부 LED 핀 출력 설정
+  - `Key_ISR_Enable(1)`: `PC13`, `PB1`, `PB2` 외부 인터럽트(`EXTI`) 설정[cite: 4]
+  - `motor_Init(MOTOR_PIN_A, MOTOR_PIN_B, MOTOR_EN)`: 모터 제어 핀 및 `TIM2` PWM 설정
+  - `Uart2_RX_Interrupt_Enable(1)`: USART2 수신(`RXNE`) 인터럽트 활성화[cite: 2]
+  - `Key_Poll_Init()`: 스위치 입력 핀 폴링용 초기화[cite: 4]
+  - `I2C1_SC16IS752_Init(400000)` 및 `I2C1_SC16IS752_Config_GPIO(...)`: I2C1 및 `SC16IS752` GPIO 초기화[cite: 3]
 
-* **`main.c`의 동작 (`for(;;)` 기준)**
-  * **Event**
-    1. `uart_data`가 입력되면 이를 감지하여 유효 값인지 검사하고 유효 값일 경우 Handler(`state`)의 값을 조절하여 작동부에 전달한다.
-    2. `Button` 입력 처리
-       * **2-1.** Button의 입력이 감지되면 Interrupt(PC13 : 40)와 `Button = 1` 코드가 실행되고 약 2초의 Timer(TIM4)를 설정하여 시간을 측정한다.
-       * **2-2.** Time Out이 발생하면 즉시 `Button` 변수에 `0`이 대입되고 `state`가 `0` or `1`로 원래 상태에서 반전된다.
-       * **2-3.** Time Out이 발생하기 전 버튼에서 손을 때면 (`PC13 IDR == 1`) TIM4는 즉시 정지하고 `Button` 함수에 `0`을 대입한 후 `motor_rev()` 함수를 실행한다.
-  * **Operator**
-    1. `state` 변수의 값 (on, off)에 따라 LED와 motor의 작동 유무를 결정한다.
+- **상수 및 열거형 (`Setup`)**
+  - `#define MOTOR_PIN_A 0` (`PA0`)
+  - `#define MOTOR_PIN_B 1` (`PA1`)
+  - `#define MOTOR_EN 4` (`PA4`)
+  - `enum Motor_State { Motor_Run_F = 0x01, Motor_Run_R = 0x10 }`
+  - `enum State { Motor_Off, Motor_On }`
 
----
+- **메인 루프 (`for (;;)` 동작)**
+  1. **`uart_data` 입력 처리**
+     - `'R'` / `'r'`: `motor_set_dir(Motor_Run_R)` 호출
+     - `'F'` / `'f'`: `motor_set_dir(Motor_Run_F)` 호출
+     - `'1'` ~ `'9'`: `motor_PWM = uart_data - '1'`로 설정하고 `PWM_refresh = 1` 설정 (또는 I2C GPIO 출력 갱신)
+     - `'S'` / `'s'`: `state = !state`로 On/Off 토글
+     - 처리 후 `uart_data = 0`으로 초기화
+  2. **`Button` 입력 처리**
+     - `EXTI15_10_IRQHandler`에서 `Button = 1` 및 `TIM4` 시작
+     - 타임아웃(약 2초) 전 버튼에서 손을 떼면(`Button && !Key_Get_Pressed()`) `TIM4`를 정지하고 `Button = 0` 후 `motor_rev()` 호출
+  3. **상태 출력 (`switch (state)`)**
+     - `Motor_Off`: `LED_Off()`, `motor_stop()` 호출
+     - `Motor_On`: `LED_On()`, `motor_start()`, `motor_set_speed(motor_speed[motor_PWM])` 호출 및 속도 변경 시 `I2C1_SC16IS752_Write_GPIO(...)`로 `BUS_EXT` LED 표시 갱신[cite: 3]
 
 ### `motor.c`
 
-* **`motor_Init(int PinA, int PinB)`**
-  * **역할:** 모터와 연결된 GPIO와 모터의 기본 값 설정
-  * **사용 위치:** `main`
-  * **반환 값:** `void`
-  * **전달 인자:** MOTOR PIN (`Pin A`, `Pin B`)
-  * **내부 구조:** 입력받은 Pin의 clock과 Timer, Compare 등 PWM을 위한 Register을 설정하여 Pin이 PWM을 출력할 수 있도록 준비한다.
-    * 사용할 핀은 `GPIOA` -> `PA0`, `PA1` : 해당하는 핀의 Timer는 `TIM2` : `channel[1:0]`
-    * `RCC -> APB1ENR` : `(0x1 << 0)`으로 설정
-    * `GPIOA->AFR[0]` : `0001 0001`로 설정
-    * `GPIOA -> MODER` : `(0x10 << 0) || (0x10 << 2)` [Alternate function mode]으로 설정
-    * Timer는 Repeat 모드로 설정, ARR은 Pulse가 8MH 주파수를 갖도록 설정, CCR은 DutyRate가 100%가 되도록 설정
-    * `TIM2->SR` : TIM2의 channel 1, 2는 PWM을 출력하기 위한 핀으로 Repeat mode에선 자동으로 TimeOut bit가 clear되므로 따로 설정할 필요가 없다.
-    * `TIM2->EGR` : `(0x1 << 0)`로 egr 0bit 값 초기화
-    * `TIM2->ARR` : `MOTOR_ARR(800)`로 설정 / 8000HZ 주파수 기준으로 모터에서 소음 발생
-    * `TIM1->PSC` : `MOTOR_PSC(((SYSCLK / MOTOR_FREQ) + 0.5) - 1)`로 설정
-    * `TIM2->CCMR2` : `0x6868`로 설정 (양 채널 비교기 preload, PWM, Output 설정)
-    * `TIM2->CCER` : `(TIM2->CCER & ~((0x1 << 5) | (0x1 << 1))) | ((0x1 << 4) | (0x1 << 0))`로 설정
-    * `TIM2->CR1` : `(ARPE(7) : 0)`, `(DIR(4) : 1(Down Counter 사용))`, `(OPM(3) : 0(Repeat mode))`, `(CEN(0) : 1(timer enable))` `[0x1 << 4, 0x1 << 0]`으로 설정
+- **`motor_Init(int PinA, int PinB, int PinEN)`**
+  - `PA0`, `PA1` Alternate Function(AF1, `TIM2` Ch.1/Ch.2) 및 `PA4` 출력 설정
+  - `TIM2` Repeat 모드, `ARR`, `PSC`, `CCMR`, `CCER`, `CR1` 설정 및 `A`, `B`, `EN` 저장
 
-* **`motor_rev()`**
-  * **역할:** 모터의 회전 방향을 바꾸기 위한 함수
-  * **사용 위치:** `main` / Button의 눌린 시간을 검사하는 main logic 내부에서 실행
-  * **반환 값:** `void`
-  * **전달 인자:** `void`
-  * **내부 구조:**
-    * `GPIOA->AFR[0]`을 `0`으로 대입해 PWM 출력을 멈춘다.
-    * `motor_state`의 0번 째와 4번 째 bit를 반전시킨다.
-    * `motor_start_interrupt`에 `1`을 대입하여 모터의 작동을 금지한다.
-    * `TIM3_Interrupt_Enable(1, 1000)` 함수를 실행한다.
+- **`motor_rev(void)`**
+  - 드라이버 비활성화 후 회전 방향 핀/AF 설정 반전
+  - `motor_start_interrupt = 1` 설정 후 `TIM3_Interrupt_Enable(1, 1000)` 호출
 
-* **`motor_set_dir()`**
-  * **역할:** 모터의 회전방향을 설정하기 위한 함수
-  * **사용 위치:** `main`
-  * **반환 값:** `void`
-  * **전달 인자:** `(unsigned char dir)`
-  * **내부 구조:**
-    * `motor_state`와 입력받은 값 `dir`을 비교한다. 같으면 return
-    * `GPIOA->AFR[0]`에 `0`을 대입하여 모터를 일시 정지시킨다.
-    * 입력 받은 `dir`을 `motor_state`에 대입한다.
-    * `motor_start_interrupt`에 `1`을 대입하여 모터의 작동을 금지한다.
-    * `TIM3_Interrupt_Enable(1, 1000)` 함수를 실행한다.
+- **`motor_set_dir(unsigned char dir)`**
+  - 현재 방향과 다를 경우 드라이버 일시 정지 및 방향 설정 반영
+  - `motor_start_interrupt = 1` 설정 후 `TIM3_Interrupt_Enable(1, 1000)` 호출
 
-* **`motor_set_speed()`**
-  * **역할:** 모터의 DutyRate을 바꾸어 속도를 조절하는 역할
-  * **사용 위치:** `main`
-  * **반환 값:** `void`
-  * **전달 인자:** `(unsigned long motor_speed)` [`duty_rate[]`] (`2000` ~ `4000`)
-  * **내부 구조:** `TIM2->CCR1`, `TIM2->CCR2` 값에 전달 받은 인자를 대입한다.
+- **`motor_set_speed(unsigned long motor_speed)`**
+  - 전달받은 듀티/비교 값으로 `TIM2` 채널의 `CCR` 레지스터 갱신
 
-* **`get_motor_state()`**
-  * **역할:** 모터의 현재 회전 방향을 반환하는 함수
-  * **사용 위치:** `main`
-  * **반환 값:** `unsigned char`
-  * **전달 인자:** `void`
-  * **내부 구조:**
-    * 함수 호출 시 현재 `GPIOA->AFR[0]`의 값을 반환한다.
+- **`get_motor_state(void)`**
+  - 현재 방향 설정 상태(`unsigned char`) 반환
 
-* **`motor.c`의 동작**
-  * 파일 내부에 `motor_state` 변수를 선언하여 `GPIOA->ARF[0]`의 값과 구분한다.
-  * `motor_start_interrupt` 변수를 선언하여 방향 전환과 관련된 함수가 실행 중일 때 모터의 동작을 금지한다.
-  * **모터의 동작에 직접적으로 관여하는 함수:** `motor_start()` , `motor_stop()`
-  * **모터의 방향에 관여하는 함수:** `motor_set_dir(unsigned char dir)` , `motor_rec()`
-  * **모터의 속도에 관여하는 함수:** `motor_set_speed(unsigned long motor_speed)`
-  * **모터의 상태를 확인하는 함수:** `get_motor_state()` [return : `unsigned char`]
+- **`motor_stop(void)`**
+  - `GPIOA->ODR`의 `EN` 비트를 `0`으로 설정해 모터 출력 비활성화
+
+- **`motor_start(void)`**
+  - `motor_start_interrupt == 1`이면 즉시 반환하고, 아니면 `GPIOA->ODR`의 `EN` 비트를 `1`로 설정해 모터 출력 활성화
 
 ---
 
 ## 3. Timer 설정
 
-* **TIM2:** Ch.1, Ch.2 모터의 PWM 출력
-* **TIM3:** 모터의 안전한 방향 전환을 위한 Timer
-  * 목표 시간 : `1000ms`
-* **TIM4:** 내부 스위치의 눌린 시간을 측정하는 Timer
-  * 목표 시간 : `2000ms`
+- **TIM2:** Ch.1, Ch.2 모터 PWM 출력
+- **TIM3:** 모터 방향 전환 안전 대기 타이머 (`1000ms`)
+- **TIM4:** 내부 스위치(PC13) 누름 시간 측정 타이머 (`2000ms`)
 
 ---
 
 ## 4. Interrupt 설정 - `exception.c`
 
-* **`TIM3_IRQHandler()` (TIM3) (29)**
-  * TIM3 TimeOut 발생 시 호출
-  * 1. `motor_start_interrupt`에 `0`을 대입하여 모터의 작동 금지를 해제한다.
+- **`TIM3_IRQHandler()` (IRQ 29):** 타임아웃 시 `motor_start_interrupt = 0` 및 `TIM3` 비활성화
+- **`TIM4_IRQHandler()` (IRQ 30):** 타임아웃 시 `TIM4` 정지, `Button = 0`, `state = !state` 반전
+- **`EXTI15_10_IRQHandler()` (PC13, IRQ 40):** Falling Edge 시 `Button = 1` 및 `TIM4` 시작
+- **`USART2_IRQHandler()` (USART2, IRQ 38):** 문자 수신 시 `uart_data` 저장 후 `TXE` 플래그 확인 및 에코 송신
+- **`EXTI1_IRQHandler()` (PB1, IRQ 7):** Falling Edge 시 `motor_PWM < 8`이면 `1` 증가, `PWM_refresh = 1` 설정
+- **`EXTI2_IRQHandler()` (PB2, IRQ 8):** Falling Edge 시 `motor_PWM > 0`이면 `1` 감소, `PWM_refresh = 1` 설정
 
-* **`TIM4_IRQHandler()` (TIM 4) (30)**
-  * TIM4 TimeOut 발생 시 호출
-  * 1. `!state` : 모터의 on off 상태를 반전시킨다.
-  * 2. `Button`에 `0`을 대입한다.
+---
 
-* **`EXTI15_10_IRQHandler()` (PC13) (40)**
-  * PC13번 (내부 스위치)의 Falling Edge 발생 시 호출
-  * 1. TIM4 Timer를 실행 시킨다.
-  * 2. `Button`(flag) = `1`로 바꾼다.
+## 5. 기존 드라이버/예제 함수 목록
 
-* **`USART2_IRQHandler()` (USART2) (38)**
-  * 터미널(teraterm)을 통해 문자를 입력 받으면 호출
-  * 1. 문자를 입력 받으면 `uart_data`에 문자 입력
-  * 2. TX를 통해 입력 받은 문자를 다시 터미널에 출력
+- **`led.c`:** `LED_Init(void)`, `LED_On(void)`, `LED_Off(void)`
+- **`key.c`:** `Key_Poll_Init(void)`, `Key_Get_Pressed(void)`, `Key_ISR_Enable(int en)`[cite: 4]
+- **`timer.c`:** `TIM3_Interrupt_Enable(...)`, `TIM4_Repeat_Interrupt_Enable(int en)`
+- **`uart.c`:** `Uart2_Init(int baud)`, `Uart2_RX_Interrupt_Enable(int en)`[cite: 2]
+- **`i2c_2.c`:** `I2C1_SC16IS752_Init(unsigned int freq)`, `I2C1_SC16IS752_Config_GPIO(unsigned int config)`, `I2C1_SC16IS752_Write_GPIO(unsigned int data)`[cite: 3]

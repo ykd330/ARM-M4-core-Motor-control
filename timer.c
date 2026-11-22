@@ -70,21 +70,8 @@ void TIM4_Repeat_Interrupt_Enable(int en)
 	}
 }
 
-void TIM4_Repeat(int time)
-{
-	Macro_Set_Bit(RCC->APB1ENR, 2);
-
-	TIM4->CR1 = (1<<4)|(0<<3);
-	TIM4->PSC = (unsigned int)(SYSCLK/TIM4_FREQ + 0.5)-1;
-	TIM4->ARR = TIME4_PLS_OF_1ms * time - 1;
-
-	Macro_Set_Bit(TIM4->EGR,0);
-	Macro_Clear_Bit(TIM4->SR, 0);
-	Macro_Set_Bit(TIM4->CR1, 0);
-}
-
 #define TIM3_FREQ 	  			(8000000.) 	      		// Hz
-#define TIM3_TICK	  			(1000000./TIM3_FREQ)	// usec
+#define TIM3_TICK	  			20	// usec
 #define TIME3_PLS_OF_1ms  		(1000./TIM3_TICK)
 
 void TIM3_Interrupt_Enable(int en, int time)
@@ -95,7 +82,7 @@ void TIM3_Interrupt_Enable(int en, int time)
 
 		TIM3->CR1 = (1<<4)|(1<<3);
 		TIM3->PSC = (unsigned int)(SYSCLK/TIM4_FREQ + 0.5)-1;
-		TIM3->ARR = TIME4_PLS_OF_1ms * time;
+		TIM3->ARR = TIME3_PLS_OF_1ms * time;
 		Macro_Set_Bit(TIM3->EGR,0);
 
 		Macro_Clear_Bit(TIM3->SR, 0);
