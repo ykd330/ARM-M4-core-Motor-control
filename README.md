@@ -142,9 +142,17 @@ MOTOR CONTROL PROJECT
   2. **`Button` 입력 처리**
      - `EXTI15_10_IRQHandler`에서 `Button = 1` 및 `TIM4` 시작
      - 타임아웃(약 2초) 전 버튼에서 손을 떼면(`Button && !Key_Get_Pressed()`) `TIM4`를 정지하고 `Button = 0` 후 `motor_rev()` 호출
+     - 타임아웃 발생 시 자동으로 `Button = 0`과 `state`가 반전됨
   3. **상태 출력 (`switch (state)`)**
      - `Motor_Off`: `LED_Off()`, `motor_stop()` 호출
      - `Motor_On`: `LED_On()`, `motor_start()`, `motor_set_speed(motor_speed[motor_PWM])` 호출 및 속도 변경 시 `I2C1_SC16IS752_Write_GPIO(...)`로 `BUS_EXT` LED 표시 갱신
+
+-  **UART**
+  1. **`UART` 동작**
+     - `Terminel`에 데이터 입력 시 `USART2_IRQHandler`가 호출됨
+     - `USART2->DR`의 데이터가 `uart_data`에 저장됨
+     - `USART2->SR`을 통해 `TX Buffer`가 빌 때 까지 대기
+     - `TX Buffer`에 `uart_data`를 넣어 `Terminel`로 재전송
 
 ### `motor.c`
 - **`define`**
@@ -165,7 +173,7 @@ MOTOR CONTROL PROJECT
   - `motor_start_interrupt = 1` 설정 후 `TIM3_Interrupt_Enable(1, 1000)` 호출
 
 - **`motor_set_speed(unsigned long motor_speed)`**
-  - `TIM2` 채널의 `CCR` 레지스터 갱신
+  - 전달받은 듀티/비교 값으로 `TIM2` 채널의 `CCR` 레지스터 갱신
 
 - **`get_motor_state(void)`**
   - 현재 방향 설정 상태(`unsigned char`) 반환
