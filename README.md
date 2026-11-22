@@ -123,7 +123,6 @@ MOTOR CONTROL PROJECT
   - `Key_ISR_Enable(1)`: `PC13`, `PB1`, `PB2` 외부 인터럽트(`EXTI`) 설정
   - `motor_Init(MOTOR_PIN_A, MOTOR_PIN_B, MOTOR_EN)`: 모터 제어 핀 및 `TIM2` PWM 설정
   - `Uart2_RX_Interrupt_Enable(1)`: USART2 수신(`RXNE`) 인터럽트 활성화
-  - `Key_Poll_Init()`: 스위치 입력 핀 폴링용 초기화
   - `I2C1_SC16IS752_Init(400000)` 및 `I2C1_SC16IS752_Config_GPIO(...)`: I2C1 및 `SC16IS752` GPIO 초기화
 
 - **상수 및 열거형 (`Setup`)**
