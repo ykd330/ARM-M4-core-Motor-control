@@ -165,7 +165,7 @@ MOTOR CONTROL PROJECT
   - `motor_start_interrupt = 1` 설정 후 `TIM3_Interrupt_Enable(1, 1000)` 호출
 
 - **`motor_set_speed(unsigned long motor_speed)`**
-  - 전달받은 듀티/비교 값으로 `TIM2` 채널의 `CCR` 레지스터 갱신
+  - `TIM2` 채널의 `CCR` 레지스터 갱신
 
 - **`get_motor_state(void)`**
   - 현재 방향 설정 상태(`unsigned char`) 반환
