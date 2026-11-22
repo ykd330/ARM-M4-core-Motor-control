@@ -1,14 +1,7 @@
 #include "device_driver.h"
-
-#define TIM2_TICK         	(20) 					// usec
-#define TIM2_FREQ 	  		(1000000./TIM2_TICK)	// Hz
-#define TIME2_PLS_OF_1ms  	(1000./TIM2_TICK)
-#define TIM2_MAX	  		(0xffffffffu)
-
 #define TIM4_TICK	  		(20) 					// usec
 #define TIM4_FREQ 	  		(1000000./TIM4_TICK) 	// Hz
 #define TIME4_PLS_OF_1ms  	(1000./TIM4_TICK)
-#define TIM4_MAX	  		(0xffffu)
 
 #define TIM_TICK	  	(100) 					// usec
 #define TIM_FREQ 	  	(1000000./TIM_TICK) 	// Hz
@@ -71,7 +64,7 @@ void TIM4_Repeat_Interrupt_Enable(int en)
 }
 
 #define TIM3_FREQ 	  			(8000000.) 	      		// Hz
-#define TIM3_TICK	  			20	// usec
+#define TIM3_TICK	  			(20)	// usec
 #define TIME3_PLS_OF_1ms  		(1000./TIM3_TICK)
 
 void TIM3_Interrupt_Enable(int en, int time)

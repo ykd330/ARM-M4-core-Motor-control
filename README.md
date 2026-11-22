@@ -47,7 +47,7 @@ MOTOR CONTROL PROJECT
   - **역할:** USART2 수신 문자를 저장 (`Event Handler`)
   - **사용 위치:** `main.c`, `exception.c` (`extern volatile`)
   - **범위:** `Global`
-  - **값:** 수신 문자 / 유효값: `'R'`, `'r'`, `'F'`, `'f'`, `'1'` ~ `'9'`, `'S'`, `'s'`
+  - **값:** 수신 문자 / 유효값: `'R'`, `'r'`, `'F'`, `'f'`, `'1'` ~ `'9'`
 
 - **`motor_speed[9]`**
   - **크기:** 36B (`4B x 9`, `const unsigned long`)
@@ -118,13 +118,12 @@ MOTOR CONTROL PROJECT
 - **초기화 (`Sys_Init`)**
   - `SCB->CPACR`: FPU(CP10, CP11) 접근 활성화
   - `Clock_Init()`: 시스템 클럭 및 주변장치 클럭 설정
-  - `Uart2_Init(baud)`: USART2 통신 레지스터 설정 (`PA2`/`PA3`, AF7)[cite: 2]
+  - `Uart2_Init(baud)`: USART2 통신 레지스터 설정 (`PA2`/`PA3`, AF7)
   - `LED_Init()`: `PA5` 내부 LED 핀 출력 설정
-  - `Key_ISR_Enable(1)`: `PC13`, `PB1`, `PB2` 외부 인터럽트(`EXTI`) 설정[cite: 4]
+  - `Key_ISR_Enable(1)`: `PC13`, `PB1`, `PB2` 외부 인터럽트(`EXTI`) 설정
   - `motor_Init(MOTOR_PIN_A, MOTOR_PIN_B, MOTOR_EN)`: 모터 제어 핀 및 `TIM2` PWM 설정
-  - `Uart2_RX_Interrupt_Enable(1)`: USART2 수신(`RXNE`) 인터럽트 활성화[cite: 2]
-  - `Key_Poll_Init()`: 스위치 입력 핀 폴링용 초기화[cite: 4]
-  - `I2C1_SC16IS752_Init(400000)` 및 `I2C1_SC16IS752_Config_GPIO(...)`: I2C1 및 `SC16IS752` GPIO 초기화[cite: 3]
+  - `Uart2_RX_Interrupt_Enable(1)`: USART2 수신(`RXNE`) 인터럽트 활성화
+  - `I2C1_SC16IS752_Init(400000)` 및 `I2C1_SC16IS752_Config_GPIO(...)`: I2C1 및 `SC16IS752` GPIO 초기화
 
 - **상수 및 열거형 (`Setup`)**
   - `#define MOTOR_PIN_A 0` (`PA0`)
@@ -145,9 +144,13 @@ MOTOR CONTROL PROJECT
      - 타임아웃(약 2초) 전 버튼에서 손을 떼면(`Button && !Key_Get_Pressed()`) `TIM4`를 정지하고 `Button = 0` 후 `motor_rev()` 호출
   3. **상태 출력 (`switch (state)`)**
      - `Motor_Off`: `LED_Off()`, `motor_stop()` 호출
-     - `Motor_On`: `LED_On()`, `motor_start()`, `motor_set_speed(motor_speed[motor_PWM])` 호출 및 속도 변경 시 `I2C1_SC16IS752_Write_GPIO(...)`로 `BUS_EXT` LED 표시 갱신[cite: 3]
+     - `Motor_On`: `LED_On()`, `motor_start()`, `motor_set_speed(motor_speed[motor_PWM])` 호출 및 속도 변경 시 `I2C1_SC16IS752_Write_GPIO(...)`로 `BUS_EXT` LED 표시 갱신
 
 ### `motor.c`
+- **`define`**
+  - `MOTOR_FREQ` : `8000000`
+  - `MOTOR_PSC` : `(int)(((SYSCLK / MOTOR_FREQ) + 0.5)) - 1` : `PSC` = `8`
+  - `MOTOR_ARR` : `4000` : 테스트 결과 `ARR = 8000` 부근에서 모터에 소음이 발생함
 
 - **`motor_Init(int PinA, int PinB, int PinEN)`**
   - `PA0`, `PA1` Alternate Function(AF1, `TIM2` Ch.1/Ch.2) 및 `PA4` 출력 설정
@@ -176,6 +179,13 @@ MOTOR CONTROL PROJECT
 ---
 
 ## 3. Timer 설정
+- **`define`**
+  - `TIM4_TICK` : `20us`
+  - `TIM4_FREQ` : `1000000` / `TIM4_TICK` = `50000Hz`
+  - `TIME4_PLS_OF_1ms` : `1000` / `TIM4_TICK` = `50EA`
+  - `TIM4_TICK` : `100us`
+  - `TIM_FREQ` : `1000000` / `TIM_TICK` = `10000Hz`
+  - `TIM_PLS_OF_1ms` : `1000` / `TIM_TICK` = `10EA`
 
 - **TIM2:** Ch.1, Ch.2 모터 PWM 출력
 - **TIM3:** 모터 방향 전환 안전 대기 타이머 (`1000ms`)
@@ -197,7 +207,7 @@ MOTOR CONTROL PROJECT
 ## 5. 기존 드라이버/예제 함수 목록
 
 - **`led.c`:** `LED_Init(void)`, `LED_On(void)`, `LED_Off(void)`
-- **`key.c`:** `Key_Poll_Init(void)`, `Key_Get_Pressed(void)`, `Key_ISR_Enable(int en)`[cite: 4]
+- **`key.c`:** `Key_Poll_Init(void)`, `Key_Get_Pressed(void)`, `Key_ISR_Enable(int en)`
 - **`timer.c`:** `TIM3_Interrupt_Enable(...)`, `TIM4_Repeat_Interrupt_Enable(int en)`
-- **`uart.c`:** `Uart2_Init(int baud)`, `Uart2_RX_Interrupt_Enable(int en)`[cite: 2]
-- **`i2c_2.c`:** `I2C1_SC16IS752_Init(unsigned int freq)`, `I2C1_SC16IS752_Config_GPIO(unsigned int config)`, `I2C1_SC16IS752_Write_GPIO(unsigned int data)`[cite: 3]
+- **`uart.c`:** `Uart2_Init(int baud)`, `Uart2_RX_Interrupt_Enable(int en)`
+- **`i2c_2.c`:** `I2C1_SC16IS752_Init(unsigned int freq)`, `I2C1_SC16IS752_Config_GPIO(unsigned int config)`, `I2C1_SC16IS752_Write_GPIO(unsigned int data)`
