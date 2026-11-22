@@ -1,10 +1,8 @@
 # ARM-M4-core-Motor-control
 
-MOTOR CONTROL PROJECT
-
 ## 온디바이스AISW개발2기 ARM core M4 Board / STM32 
--팀장 유경도
--팀원 : 전민수 조혜원 한성현 
+-**팀장** : `유경도`
+-**팀원** : `전민수 조혜원 한성현` 
 ---
 
 ## 목차
