@@ -80,7 +80,6 @@
 3. [Timer 설정](#3-timer-설정)
 4. [Interrupt 설정 - exception.c](#4-interrupt-설정---exceptionc)
 5. [기존 드라이버/예제 함수 목록](#5-기존-드라이버예제-함수-목록)
-6. [개선사항](#6-개선-사항)
 
 ## 구현 목표
 
