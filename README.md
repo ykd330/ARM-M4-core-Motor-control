@@ -48,7 +48,10 @@
 
 ## 6. 결과
 
-![동작 모습](docs/demo.gif)
+![시연영상1](https://youtu.be/1CL-t_hnu2c)
+![시연영상1](https://youtu.be/mKuB0JGsseE)
+![시연영상1 - 터미널](https://youtu.be/koXa5UA8558)
+![시연영상2 - 터미널](https://youtu.be/msX4Q_CV6ZE)
 
 ## 7. 시행착오와 해결
 
