@@ -1,8 +1,14 @@
 # ARM-M4-core-Motor-control
 
-## 온디바이스AISW개발2기 ARM core M4 Board / STM32 
+## 온디바이스AISW개발2기 ARM Cortex-M4 / STM32 
 - 팀장 : `유경도`
-- 팀원 : `전민수 조혜원 한성현` 
+     * 역할 : Motor의 활성화 및 제어를 위한 Motor.c와 관련 변수, 함수 설계 및 Main 코드 통합
+- 팀원 : `전민수`
+     * 역할 :
+         `조혜원`
+     * 역할 : UART통신을 통해 Motor를 제어하기 위한 변수, 함수 및 Main 설계
+         `한성현`
+     * 역할 : Switch를 통한 Motor의 On / Off 기능 구현을 위한 변수, 함수 및 Main 설계
 ---
 
 ## 목차
@@ -16,6 +22,7 @@
 3. [Timer 설정](#3-timer-설정)
 4. [Interrupt 설정 - exception.c](#4-interrupt-설정---exceptionc)
 5. [기존 드라이버/예제 함수 목록](#5-기존-드라이버예제-함수-목록)
+6. [개선사항](#6-기존코드의-개선사항-정리)
 
 ---
 
@@ -220,3 +227,12 @@
 - **`timer.c`:** `TIM3_Interrupt_Enable(...)`, `TIM4_Repeat_Interrupt_Enable(int en)`
 - **`uart.c`:** `Uart2_Init(int baud)`, `Uart2_RX_Interrupt_Enable(int en)`
 - **`i2c_2.c`:** `I2C1_SC16IS752_Init(unsigned int freq)`, `I2C1_SC16IS752_Config_GPIO(unsigned int config)`, `I2C1_SC16IS752_Write_GPIO(unsigned int data)`
+
+---
+
+## 6. 개선 사항
+
+- 모터의 방향 전환을 위해 하드웨어적 방법인 모터 드라이버를 비활성화 시키는 방법을 사용했지만 이는 STM32보드 내부적으로 타이머 장치가 작동하므로 전원을 소모합니다.
+  * 모터 드라이버를 비활성화 한 후 이어서 **TIM2**의 **CR1**의 **CEN**을 `0`으로 변경하면 타이머의 카운터가 비활성화 되므로 소모 전력을 더 아낄 수 있습니다.
+- 모터의 속도를 조절하는 외부 스위치는 현재 **chattering**에 대비되어 있지 않습니다. 
+  * 외부 스위치의 입력을 받을 때 짧은 시간동안 입력을 지속적으로 받아야 1번으로 인식되는 **key.c**의 버튼 입력 방식을 사용하면 다중 인식을 줄일 수 있습니다.
